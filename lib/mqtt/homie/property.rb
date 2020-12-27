@@ -80,7 +80,7 @@ module MQTT
         mqtt.publish("#{topic}/$name", name, true, 1)
         mqtt.publish("#{topic}/$datatype", datatype.to_s, true, 1)
         mqtt.publish("#{topic}/$format", format, true, 1) if format
-        mqtt.publish("#{topic}/$settable", "false", true, 1) unless settable?
+        mqtt.publish("#{topic}/$settable", "true", true, 1) if settable?
         mqtt.publish("#{topic}/$retained", "false", true, 1) unless retained?
         mqtt.publish("#{topic}/$unit", unit, true, 1) if unit
         mqtt.subscribe("#{topic}/set") if settable?
