@@ -32,7 +32,7 @@ module MQTT
         init do
           property.unpublish
           @properties.delete(id)
-          mqtt.publish("#{topic}/$properties", @properties.keys.join(","), true, 1) if @published
+          mqtt.publish("#{topic}/$properties", @properties.keys.join(","), retain: true, qos: 1) if @published
         end
       end
 
@@ -45,14 +45,16 @@ module MQTT
       end
 
       def publish
-        unless @published
-          mqtt.publish("#{topic}/$name", name, true, 1)
-          mqtt.publish("#{topic}/$type", @type.to_s, true, 1)
-          @published = true
+        mqtt.batch_publish do
+          unless @published
+            mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
+            mqtt.publish("#{topic}/$type", @type.to_s, retain: true, qos: 1)
+            @published = true
+          end
+
+          mqtt.publish("#{topic}/$properties", @properties.keys.join(","), retain: true, qos: 1)
+          @properties.each_value(&:publish)
         end
- 
-        mqtt.publish("#{topic}/$properties", @properties.keys.join(","), true, 1)
-        @properties.each_value(&:publish)
       end
 
       def unpublish

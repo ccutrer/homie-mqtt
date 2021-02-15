@@ -18,7 +18,7 @@ module MQTT
           name = value
           if @published
             device.init do
-              mqtt.publish("#{topic}/$name", name, true, 1)
+              mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
             end
           end
         end

@@ -50,7 +50,7 @@ module MQTT
       def value=(value)
         if @value != value
           @value = value
-          mqtt.publish(topic, value.to_s, retained?, 1) if @published
+          mqtt.publish(topic, value.to_s, retain: retained?, qos: 1) if @published
         end
       end
 
@@ -59,7 +59,7 @@ module MQTT
           @unit = unit
           if @published
             device.init do
-              mqtt.publish("#{topic}/$unit", unit.to_s, true, 1)
+              mqtt.publish("#{topic}/$unit", unit.to_s, retain: true, qos: 1)
             end
           end
         end
@@ -70,7 +70,7 @@ module MQTT
           @format = format
           if @published
             device.init do
-              mqtt.publish("#{topic}/$format", format.to_s, true, 1)
+              mqtt.publish("#{topic}/$format", format.to_s, retain: true, qos: 1)
             end
           end
         end
@@ -120,14 +120,16 @@ module MQTT
       def publish
         return if @published
 
-        mqtt.publish("#{topic}/$name", name, true, 1)
-        mqtt.publish("#{topic}/$datatype", datatype.to_s, true, 1)
-        mqtt.publish("#{topic}/$format", format, true, 1) if format
-        mqtt.publish("#{topic}/$settable", "true", true, 1) if settable?
-        mqtt.publish("#{topic}/$retained", "false", true, 1) unless retained?
-        mqtt.publish("#{topic}/$unit", unit, true, 1) if unit
-        mqtt.subscribe("#{topic}/set") if settable?
-        mqtt.publish(topic, value.to_s, retained?, 1) if value
+        mqtt.batch_publish do
+          mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
+          mqtt.publish("#{topic}/$datatype", datatype.to_s, retain: true, qos: 1)
+          mqtt.publish("#{topic}/$format", format, retain: true, qos: 1) if format
+          mqtt.publish("#{topic}/$settable", "true", retain: true, qos: 1) if settable?
+          mqtt.publish("#{topic}/$retained", "false", retain: true, qos: 1) unless retained?
+          mqtt.publish("#{topic}/$unit", unit, retain: true, qos: 1) if unit
+          mqtt.subscribe("#{topic}/set") if settable?
+          mqtt.publish(topic, value.to_s, retain: retained?, qos: 1) if value
+        end
 
         @published = true
       end

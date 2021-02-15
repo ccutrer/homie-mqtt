@@ -37,7 +37,7 @@ module MQTT
           yield node if block_given?
           if prior_state == :ready
             node.publish
-            mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), true, 1)
+            mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), retain: true, qos: 1)
           end
         end
         self
@@ -48,7 +48,7 @@ module MQTT
         init do
           node.unpublish
           @nodes.delete(id)
-          mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), true, 1) if @published
+          mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), retain: true, qos: 1) if @published
         end
       end
 
@@ -59,28 +59,30 @@ module MQTT
       def publish
         return if @published
 
-        mqtt.publish("#{topic}/$homie", "4.0.0", true, 1)
-        mqtt.publish("#{topic}/$name", name, true, 1)
-        mqtt.publish("#{topic}/$state", @state.to_s, true, 1)
+        mqtt.batch_publish do
+          mqtt.publish("#{topic}/$homie", "4.0.0", retain: true, qos: 1)
+          mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
+          mqtt.publish("#{topic}/$state", @state.to_s, retain: true, qos: 1)
 
-        @subscription_thread = Thread.new do
-          mqtt.get do |topic, value|
-            match = topic.match(topic_regex)
-            node = @nodes[match[:node]] if match
-            property = node[match[:property]] if node
+          @subscription_thread = Thread.new do
+            mqtt.get do |topic, value|
+              match = topic.match(topic_regex)
+              node = @nodes[match[:node]] if match
+              property = node[match[:property]] if node
 
-            unless property&.settable?
-              @block&.call(topic, value)
-              next
+              unless property&.settable?
+                @block&.call(topic, value)
+                next
+              end
+
+              property.set(value)
             end
-
-            property.set(value)
           end
+
+          mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), retain: true, qos: 1)
+          @nodes.each_value(&:publish)
+          mqtt.publish("#{topic}/$state", (@state = :ready).to_s, retain: true, qos: 1)
         end
- 
-        mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), true, 1)
-        @nodes.each_value(&:publish)
-        mqtt.publish("#{topic}/$state", (@state = :ready).to_s, true, 1)
 
         @published = true
       end
@@ -102,9 +104,9 @@ module MQTT
         end
 
         prior_state = state
-        mqtt.publish("#{topic}/$state", (state = :init).to_s, true, 1)
+        mqtt.publish("#{topic}/$state", (state = :init).to_s, retain: true, qos: 1)
         yield(prior_state)
-        mqtt.publish("#{topic}/$state", (state = :ready).to_s, true, 1)
+        mqtt.publish("#{topic}/$state", (state = :ready).to_s, retain: true, qos: 1)
         nil
       end
 
