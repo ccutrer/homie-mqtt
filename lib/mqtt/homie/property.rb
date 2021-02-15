@@ -8,9 +8,19 @@ module MQTT
       def initialize(node, id, name, datatype, value = nil, format: nil, retained: true, unit: nil, &block)
         raise ArgumentError, "Invalid Homie datatype" unless %s{string integer float boolean enum color}
         raise ArgumentError, "retained must be boolean" unless [true, false].include?(retained)
+        format = format.join(",") if format.is_a?(Array) && datatype == :enum
+        if %i{integer float}.include?(datatype) && format.is_a?(Range)
+          raise ArgumentError "only inclusive ranges are supported" if format.exclude_end?
+          format = "#{format.begin}:#{format.end}"
+        end
         raise ArgumentError, "format must be nil or a string" unless format.nil? || format.is_a?(String)
         raise ArgumentError, "unit must be nil or a string" unless unit.nil? || unit.is_a?(String)
+        raise ArgumentError, "format is required for enums" if datatype == :enum && format.nil?
+        raise ArgumentError, "format is required for colors" if datatype == :color && format.nil?
+        raise ArgumentError, "format must be either rgb or hsv for colors" if datatype == :color && !%w{rgb hsv}.include?(format.to_s)
+
         super(id, name)
+
         @node = node
         @datatype = datatype
         @format = format
@@ -66,8 +76,41 @@ module MQTT
         end
       end
 
+      def range
+        case datatype
+        when :enum; format.split(',')
+        when :integer; Range.new(*format.split(':').map(&:to_i))
+        when :float; Range.new(*format.split(':').map(&:to_f))
+        else; raise MethodNotImplemented
+        end
+      end
+
       def set(value)
-        @block.call(self, value)
+        case datatype
+        when :boolean
+          return unless %w{true false}.include?(value)
+          value = value == 'true'
+        when :integer
+          return unless value =~ /^-?\d+$/
+          value = value.to_i
+          return unless range.include?(value) if format
+        when :float
+          return unless value =~ /^-?(?:\d+|\d+\.|\.\d+|\d+\.\d+)(?:[eE]-?\d+)?$/
+          value = value.to_f
+          return unless range.include?(value) if format
+        when :enum
+          return unless range.include?(value)
+        when :color
+          return unless value =~ /^\d{1,3},\d{1,3},\d{1,3}$/
+          value = value.split(',').map(&:to_i)
+          if format == 'rgb'
+            return if value.max > 255
+          elsif format == 'hsv'
+            return if value.first > 360 || value[1..2].max > 100
+          end
+        end
+
+        @block.call(value, self)
       end
 
       def mqtt
