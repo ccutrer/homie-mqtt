@@ -7,7 +7,7 @@ module MQTT
     class Device < Base
       attr_reader :root_topic, :state, :mqtt
 
-      def initialize(id, name, root_topic: nil, mqtt: nil, &block)
+      def initialize(id, name, root_topic: nil, mqtt: nil, clear_topics: true, &block)
         super(id, name)
         @root_topic = @root_topic || "homie"
         @state = :init
@@ -18,6 +18,7 @@ module MQTT
         @mqtt = mqtt || MQTT::Client.new
         @mqtt.set_will("#{topic}/$state", "lost", true)
         @mqtt.connect
+        self.clear_topics if clear_topics
       end
 
       def device
@@ -108,6 +109,15 @@ module MQTT
       end
 
       private
+
+      def clear_topics
+        @mqtt.subscribe("#{topic}/#")
+        @mqtt.unsubscribe("#{topic}/#", wait_for_ack: true)
+        while !@mqtt.queue_empty?
+          topic, value = @mqtt.get
+          @mqtt.publish(topic, retain: true, qos: 0)
+        end
+      end
 
       def topic_regex
         @topic_regex ||= Regexp.new("^#{Regexp.escape(topic)}/(?<node>#{REGEX})/(?<property>#{REGEX})/set$")
