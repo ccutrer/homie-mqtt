@@ -3,7 +3,7 @@
 module MQTT
   module Homie
     class Node < Base
-      attr_reader :device, :type, :properties
+      attr_reader :device, :type
 
       def initialize(device, id, name, type)
         super(id, name)
@@ -28,12 +28,16 @@ module MQTT
       end
 
       def remove_property(id)
-        return unless (property = properties[id])
+        return unless (property = @properties[id])
         init do
           property.unpublish
           @properties.delete(id)
-          mqtt.publish("#{topic}/$properties", properties.keys.join(","), true, 1) if @published
+          mqtt.publish("#{topic}/$properties", @properties.keys.join(","), true, 1) if @published
         end
+      end
+
+      def [](id)
+        @properties[id]
       end
 
       def mqtt
@@ -47,15 +51,15 @@ module MQTT
           @published = true
         end
  
-        mqtt.publish("#{topic}/$properties", properties.keys.join(","), true, 1)
-        properties.each_value(&:publish)
+        mqtt.publish("#{topic}/$properties", @properties.keys.join(","), true, 1)
+        @properties.each_value(&:publish)
       end
 
       def unpublish
         return unless @published
         @published = false
 
-        properties.each_value(&:unpublish)
+        @properties.each_value(&:unpublish)
       end
     end
   end

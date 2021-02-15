@@ -5,7 +5,7 @@ require 'mqtt'
 module MQTT
   module Homie
     class Device < Base
-      attr_reader :root_topic, :state, :nodes, :mqtt
+      attr_reader :root_topic, :state, :mqtt
 
       def initialize(id, name, root_topic: nil, mqtt: nil, &block)
         super(id, name)
@@ -36,19 +36,23 @@ module MQTT
           yield node if block_given?
           if prior_state == :ready
             node.publish
-            mqtt.publish("#{topic}/$nodes", nodes.keys.join(","), true, 1)
+            mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), true, 1)
           end
         end
         self
       end
 
       def remove_node(id)
-        return unless (node = nodes[id])
+        return unless (node = @nodes[id])
         init do
           node.unpublish
           @nodes.delete(id)
-          mqtt.publish("#{topic}/$nodes", nodes.keys.join(","), true, 1) if @published
+          mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), true, 1) if @published
         end
+      end
+
+      def [](id)
+        @nodes[id]
       end
 
       def publish
@@ -61,8 +65,8 @@ module MQTT
         @subscription_thread = Thread.new do
           mqtt.get do |topic, value|
             match = topic.match(topic_regex)
-            node = nodes[match[:node]] if match
-            property = node.properties[match[:property]] if node
+            node = @nodes[match[:node]] if match
+            property = node[match[:property]] if node
 
             unless property&.settable?
               @block&.call(topic, value)
@@ -73,8 +77,8 @@ module MQTT
           end
         end
  
-        mqtt.publish("#{topic}/$nodes", nodes.keys.join(","), true, 1)
-        nodes.each_value(&:publish)
+        mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), true, 1)
+        @nodes.each_value(&:publish)
         mqtt.publish("#{topic}/$state", (@state = :ready).to_s, true, 1)
 
         @published = true
