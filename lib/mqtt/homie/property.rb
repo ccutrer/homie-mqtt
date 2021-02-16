@@ -110,7 +110,7 @@ module MQTT
           end
         end
 
-        @block.call(value, self)
+        @block.arity == 2 ? @block.call(value, self) : @block.call(value)
       end
 
       def mqtt
