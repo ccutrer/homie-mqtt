@@ -138,7 +138,14 @@ module MQTT
         return unless @published
         @published = false
 
+        mqtt.publish("#{topic}/$name", retain: true, qos: 0)
+        mqtt.publish("#{topic}/$datatype", retain: true, qos: 0)
+        mqtt.publish("#{topic}/$format", retain: true, qos: 0) if format
+        mqtt.publish("#{topic}/$settable", retain: true, qos: 0) if settable?
+        mqtt.publish("#{topic}/$retained", retain: true, qos: 0) unless retained?
+        mqtt.publish("#{topic}/$unit", retain: true, qos: 0) if unit
         mqtt.unsubscribe("#{topic}/set") if settable?
+        mqtt.publish(topic, retain: retained?, qos: 0) if value && retained?
       end
     end
   end

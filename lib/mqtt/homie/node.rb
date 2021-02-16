@@ -61,6 +61,10 @@ module MQTT
         return unless @published
         @published = false
 
+        mqtt.publish("#{topic}/$name", retain: true, qos: 0)
+        mqtt.publish("#{topic}/$type", retain: true, qos: 0)
+        mqtt.publish("#{topic}/$properties", retain: true, qos: 0)
+
         @properties.each_value(&:unpublish)
       end
     end
