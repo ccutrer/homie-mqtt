@@ -16,7 +16,18 @@ module MQTT
         @block = block
         mqtt = MQTT::Client.new(mqtt) if mqtt.is_a?(String)
         @mqtt = mqtt || MQTT::Client.new
-        @mqtt.set_will("#{topic}/$state", "lost", true)
+        @mqtt.set_will("#{topic}/$state", "lost", retain: true, qos: 1)
+
+        @mqtt.on_reconnect do
+          each do |node|
+            node.each do |property|
+              property.subscribe
+            end
+          end
+          mqtt.publish("#{topic}/$state", :init, retain: true, qos: 1)
+          mqtt.publish("#{topic}/$state", state, retain: true, qos: 1) unless state == :init
+        end
+
         @mqtt.connect
         self.clear_topics if clear_topics
       end
@@ -56,6 +67,10 @@ module MQTT
         @nodes[id]
       end
 
+      def each(&block)
+        @nodes.each_value(&block)
+      end
+
       def publish
         return if @published
 
@@ -65,6 +80,9 @@ module MQTT
           mqtt.publish("#{topic}/$state", @state.to_s, retain: true, qos: 1)
 
           @subscription_thread = Thread.new do
+            # you'll get the exception when you call `join`
+            Thread.current.report_on_exception = false
+
             mqtt.get do |topic, value|
               match = topic.match(topic_regex)
               node = @nodes[match[:node]] if match
@@ -95,6 +113,9 @@ module MQTT
 
       def join
         @subscription_thread&.join
+      rescue => e
+        e.set_backtrace(e.backtrace + ["<from Homie MQTT thread>"] + caller)
+        raise e
       end
 
       def init

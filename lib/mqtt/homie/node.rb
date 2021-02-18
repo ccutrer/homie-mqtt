@@ -40,6 +40,10 @@ module MQTT
         @properties[id]
       end
 
+      def each(&block)
+        @properties.each_value(&block)
+      end
+
       def mqtt
         device.mqtt
       end
