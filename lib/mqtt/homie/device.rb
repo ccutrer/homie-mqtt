@@ -83,17 +83,17 @@ module MQTT
             # you'll get the exception when you call `join`
             Thread.current.report_on_exception = false
 
-            mqtt.get do |topic, value|
-              match = topic.match(topic_regex)
+            mqtt.get do |packet|
+              match = packet.topic.match(topic_regex)
               node = @nodes[match[:node]] if match
               property = node[match[:property]] if node
 
               unless property&.settable?
-                @block&.call(topic, value)
+                @block&.call(topic, packet.payload)
                 next
               end
 
-              property.set(value)
+              property.set(packet.payload)
             end
           end
 
@@ -137,8 +137,8 @@ module MQTT
         @mqtt.subscribe("#{topic}/#")
         @mqtt.unsubscribe("#{topic}/#", wait_for_ack: true)
         while !@mqtt.queue_empty?
-          topic, value = @mqtt.get
-          @mqtt.publish(topic, retain: true, qos: 0)
+          packet = @mqtt.get
+          @mqtt.publish(packet.topic, retain: true, qos: 0)
         end
       end
 
