@@ -48,6 +48,15 @@ module MQTT
         device.mqtt
       end
 
+      # takes a hash with property names as keys, and values as values
+      def batch_update(hash)
+        mqtt.batch_publish do
+          hash.each do |(k, v)|
+            self[k].value = v
+          end
+        end
+      end
+
       def publish
         mqtt.batch_publish do
           unless @published
