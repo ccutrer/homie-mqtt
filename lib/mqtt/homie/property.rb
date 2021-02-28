@@ -127,7 +127,7 @@ module MQTT
           mqtt.publish("#{topic}/$settable", "true", retain: true, qos: 1) if settable?
           mqtt.publish("#{topic}/$retained", "false", retain: true, qos: 1) unless retained?
           mqtt.publish("#{topic}/$unit", unit, retain: true, qos: 1) if unit
-          mqtt.publish(topic, value.to_s, retain: retained?, qos: 1) if value
+          mqtt.publish(topic, value.to_s, retain: retained?, qos: 1) unless value.nil?
           subscribe
         end
 
@@ -149,7 +149,7 @@ module MQTT
         mqtt.publish("#{topic}/$retained", retain: true, qos: 0) unless retained?
         mqtt.publish("#{topic}/$unit", retain: true, qos: 0) if unit
         mqtt.unsubscribe("#{topic}/set") if settable?
-        mqtt.publish(topic, retain: retained?, qos: 0) if value && retained?
+        mqtt.publish(topic, retain: retained?, qos: 0) if !value.nil? && retained?
       end
     end
   end
