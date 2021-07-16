@@ -131,16 +131,19 @@ module MQTT
         nil
       end
 
-      private
-
       def clear_topics
+        raise ArgumentError, "cannot clear topics once published" if @published
+
         @mqtt.subscribe("#{topic}/#")
         @mqtt.unsubscribe("#{topic}/#", wait_for_ack: true)
         while !@mqtt.queue_empty?
           packet = @mqtt.get
           @mqtt.publish(packet.topic, retain: true, qos: 0)
         end
+        true
       end
+
+      private
 
       def topic_regex
         @topic_regex ||= Regexp.new("^#{Regexp.escape(topic)}/(?<node>#{REGEX})/(?<property>#{REGEX})/set$")
