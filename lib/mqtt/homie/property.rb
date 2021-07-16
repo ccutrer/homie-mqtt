@@ -18,6 +18,7 @@ module MQTT
         raise ArgumentError, "format is required for enums" if datatype == :enum && format.nil?
         raise ArgumentError, "format is required for colors" if datatype == :color && format.nil?
         raise ArgumentError, "format must be either rgb or hsv for colors" if datatype == :color && !%w{rgb hsv}.include?(format.to_s)
+        raise ArgumentError, "an initial value cannot be provided for a non-retained property" if !value.nil? && !retained
 
         super(id, name)
 
@@ -49,7 +50,7 @@ module MQTT
 
       def value=(value)
         if @value != value
-          @value = value
+          @value = value if retained?
           mqtt.publish(topic, value.to_s, retain: retained?, qos: 1) if @published
         end
       end
