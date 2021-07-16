@@ -40,27 +40,30 @@ module MQTT
         "#{root_topic}/#{id}"
       end
 
-      def node(*args, **kwargs)
+      def node(id, *args, **kwargs)
+        raise ArgumentError, "Node '#{id}' already exists" if @nodes.key?(id)
+
         init do |prior_state|
-          node = Node.new(self, *args, **kwargs)
-          raise ArgumentError, "Node '#{node.id}' already exists" if @nodes.key?(node.id)
-          @nodes[node.id] = node
+          node = Node.new(self, id, *args, **kwargs)
+
+          @nodes[id] = node
           yield node if block_given?
           if prior_state == :ready
             node.publish
             mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), retain: true, qos: 1)
           end
+          node
         end
-        self
       end
 
       def remove_node(id)
-        return unless (node = @nodes[id])
+        return false unless (node = @nodes[id])
         init do
           node.unpublish
           @nodes.delete(id)
           mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), retain: true, qos: 1) if @published
         end
+        true
       end
 
       def [](id)
@@ -120,15 +123,17 @@ module MQTT
 
       def init
         if state == :init
-          yield(state)
-          return
+          return yield state
         end
 
         prior_state = state
         mqtt.publish("#{topic}/$state", (state = :init).to_s, retain: true, qos: 1)
-        yield(prior_state)
+        result = nil
+        mqtt.batch_publish do
+          result = yield prior_state
+        end
         mqtt.publish("#{topic}/$state", (state = :ready).to_s, retain: true, qos: 1)
-        nil
+        result
       end
 
       def clear_topics

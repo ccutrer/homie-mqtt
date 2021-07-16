@@ -23,17 +23,18 @@ module MQTT
           raise ArgumentError, "Property '#{property.id}' already exists on '#{id}'" if @properties.key?(property.id)
           @properties[property.id] = property
           property.publish if prior_state == :ready
+          property
         end
-        self
       end
 
       def remove_property(id)
-        return unless (property = @properties[id])
+        return false unless (property = @properties[id])
         init do
           property.unpublish
           @properties.delete(id)
           mqtt.publish("#{topic}/$properties", @properties.keys.join(","), retain: true, qos: 1) if @published
         end
+        true
       end
 
       def [](id)
