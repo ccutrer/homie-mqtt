@@ -6,7 +6,7 @@ module MQTT
       attr_reader :node, :datatype, :format, :unit, :value
 
       def initialize(node, id, name, datatype, value = nil, format: nil, retained: true, unit: nil, &block)
-        raise ArgumentError, "Invalid Homie datatype" unless %s{string integer float boolean enum color}
+        raise ArgumentError, "Invalid Homie datatype" unless %s{string integer float boolean enum color datetime duration}
         raise ArgumentError, "retained must be boolean" unless [true, false].include?(retained)
         format = format.join(",") if format.is_a?(Array) && datatype == :enum
         if %i{integer float}.include?(datatype) && format.is_a?(Range)
@@ -51,7 +51,7 @@ module MQTT
       def value=(value)
         if @value != value
           @value = value if retained?
-          mqtt.publish(topic, value.to_s, retain: retained?, qos: 1) if @published
+          publish_value if @published
         end
       end
 
@@ -109,6 +109,18 @@ module MQTT
           elsif format == 'hsv'
             return if value.first > 360 || value[1..2].max > 100
           end
+        when :datetime
+          begin
+            value = Time.parse(value)
+          rescue ArgumentError
+            return
+          end
+        when :duration
+          begin
+            value = ActiveSupport::Duration.parse(value)
+          rescue ActiveSupport::Duration::ISO8601Parser::ParsingError
+            return
+          end
         end
 
         @block.arity == 2 ? @block.call(value, self) : @block.call(value)
@@ -128,7 +140,7 @@ module MQTT
           mqtt.publish("#{topic}/$settable", "true", retain: true, qos: 1) if settable?
           mqtt.publish("#{topic}/$retained", "false", retain: true, qos: 1) unless retained?
           mqtt.publish("#{topic}/$unit", unit, retain: true, qos: 1) if unit
-          mqtt.publish(topic, value.to_s, retain: retained?, qos: 1) unless value.nil?
+          publish_value unless value.nil?
           subscribe
         end
 
@@ -151,6 +163,15 @@ module MQTT
         mqtt.publish("#{topic}/$unit", retain: true, qos: 0) if unit
         mqtt.unsubscribe("#{topic}/set") if settable?
         mqtt.publish(topic, retain: retained?, qos: 0) if !value.nil? && retained?
+      end
+
+      private
+
+      def publish_value
+        serialized = value
+        serialized = serialized&.iso8601 if %i[datetime duration].include?(datatype)
+
+        mqtt.publish(topic, serialized.to_s, retain: retained?, qos: 1)
       end
     end
   end
