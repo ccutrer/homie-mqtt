@@ -6,7 +6,7 @@ module MQTT
       attr_reader :node, :datatype, :format, :unit, :value
 
       def initialize(node, id, name, datatype, value = nil, format: nil, retained: true, unit: nil, &block)
-        raise ArgumentError, "Invalid Homie datatype" unless %s{string integer float boolean enum color datetime duration}
+        raise ArgumentError, "Invalid Homie datatype" unless %i[string integer float boolean enum color datetime duration].include?(datatype)
         raise ArgumentError, "retained must be boolean" unless [true, false].include?(retained)
         format = format.join(",") if format.is_a?(Array) && datatype == :enum
         if %i{integer float}.include?(datatype) && format.is_a?(Range)
