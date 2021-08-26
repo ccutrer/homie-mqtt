@@ -6,6 +6,8 @@ module MQTT
   module Homie
     class Device < Base
       attr_reader :root_topic, :state, :mqtt
+      attr_accessor :logger
+      attr_accessor :out_of_band_topic_proc
 
       def initialize(id, name, root_topic: nil, mqtt: nil, clear_topics: true, &block)
         super(id, name)
@@ -13,7 +15,7 @@ module MQTT
         @state = :init
         @nodes = {}
         @published = false
-        @block = block
+        @out_of_band_topic_proc = block
         mqtt = MQTT::Client.new(mqtt) if mqtt.is_a?(String)
         @mqtt = mqtt || MQTT::Client.new
         @mqtt.set_will("#{topic}/$state", "lost", retain: true, qos: 1)
@@ -87,12 +89,13 @@ module MQTT
             Thread.current.report_on_exception = false
 
             mqtt.get do |packet|
+              logger&.debug("received packet at #{packet.topic} with payload #{packet.payload.inspect}")
               match = packet.topic.match(topic_regex)
               node = @nodes[match[:node]] if match
               property = node[match[:property]] if node
 
               unless property&.settable?
-                @block&.call(packet.topic, packet.payload)
+                @out_of_band_topic_proc&.call(packet.topic, packet.payload)
                 next
               end
 

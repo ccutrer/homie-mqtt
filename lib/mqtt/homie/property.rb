@@ -170,8 +170,10 @@ module MQTT
       def publish_value
         serialized = value
         serialized = serialized&.iso8601 if %i[datetime duration].include?(datatype)
+        serialized = serialized.to_s
 
-        mqtt.publish(topic, serialized.to_s, retain: retained?, qos: 1)
+        node.device.logger&.debug("publishing #{serialized.inspect} to #{topic}")
+        mqtt.publish(topic, serialized, retain: retained?, qos: 1)
       end
     end
   end
