@@ -92,7 +92,7 @@ module MQTT
               property = node[match[:property]] if node
 
               unless property&.settable?
-                @block&.call(topic, packet.payload)
+                @block&.call(packet.topic, packet.payload)
                 next
               end
 

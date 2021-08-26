@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    homie-mqtt (1.4.1)
+    homie-mqtt (1.4.2)
       mqtt-ccutrer (~> 1.0)
 
 GEM
