@@ -1,15 +1,17 @@
 PATH
   remote: .
   specs:
-    homie-mqtt (1.4.4)
-      mqtt-ccutrer (~> 1.0)
+    homie-mqtt (1.4.5)
+      mqtt-ccutrer (~> 1.0, >= 1.0.1)
+      ruby2_keywords (~> 0.0.5)
 
 GEM
   remote: https://rubygems.org/
   specs:
     byebug (9.1.0)
-    mqtt-ccutrer (1.0.0)
+    mqtt-ccutrer (1.0.1)
     rake (13.0.1)
+    ruby2_keywords (0.0.5)
 
 PLATFORMS
   ruby

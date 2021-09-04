@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'mqtt'
+require 'ruby2_keywords'
 
 module MQTT
   module Homie
@@ -42,11 +43,11 @@ module MQTT
         "#{root_topic}/#{id}"
       end
 
-      def node(id, *args, **kwargs)
+      ruby2_keywords def node(id, *args)
         raise ArgumentError, "Node '#{id}' already exists" if @nodes.key?(id)
 
         init do |prior_state|
-          node = Node.new(self, id, *args, **kwargs)
+          node = Node.new(self, id, *args)
 
           @nodes[id] = node
           yield node if block_given?

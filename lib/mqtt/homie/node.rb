@@ -17,9 +17,9 @@ module MQTT
         "#{device.topic}/#{id}"
       end
 
-      def property(*args, **kwargs, &block)
+      ruby2_keywords def property(*args, &block)
         device.init do |prior_state|
-          property = Property.new(self, *args, **kwargs, &block)
+          property = Property.new(self, *args, &block)
           raise ArgumentError, "Property '#{property.id}' already exists on '#{id}'" if @properties.key?(property.id)
           @properties[property.id] = property
           property.publish if prior_state == :ready
