@@ -32,6 +32,20 @@ module MQTT
         @block = block
       end
 
+      def inspect
+        result = +"#<MQTT::Homie::Property #{topic} name=#{name.inspect}, datatype=#{datatype.inspect}"
+        result << ", format=#{format.inspect}" if format
+        result << ", unit=#{unit.inspect}" if unit
+        result << ", settable=true" if settable?
+        result << if retained?
+          ", value=#{value.inspect}"
+        else
+          ", retained=false"
+        end
+        result << ">"
+        result.freeze
+      end
+
       def device
         node.device
       end

@@ -13,6 +13,10 @@ module MQTT
         @published = false
       end
 
+      def inspect
+        "#<MQTT::Homie::Node #{topic} name=#{name.inspect}, type=#{type.inspect}>"
+      end
+
       def topic
         "#{device.topic}/#{id}"
       end

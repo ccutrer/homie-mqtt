@@ -35,6 +35,10 @@ module MQTT
         self.clear_topics if clear_topics
       end
 
+      def inspect
+        "#<MQTT::Homie::Device #{topic} name=#{name.inspect}, $state=#{state.inspect}>"
+      end
+
       def device
         self
       end
