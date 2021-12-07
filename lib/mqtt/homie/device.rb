@@ -110,6 +110,9 @@ module MQTT
 
           mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), retain: true, qos: 1)
           @nodes.each_value(&:publish)
+
+          yield if block_given?
+
           mqtt.publish("#{topic}/$state", (@state = :ready).to_s, retain: true, qos: 1)
         end
 
