@@ -11,7 +11,7 @@ module MQTT
         raise ArgumentError, "retained must be boolean" unless [true, false].include?(retained)
 
         format = format.join(",") if format.is_a?(Array) && datatype == :enum
-        if %i{integer float}.include?(datatype) && format.is_a?(Range)
+        if %i[integer float].include?(datatype) && format.is_a?(Range)
           raise ArgumentError "only inclusive ranges are supported" if format.exclude_end?
 
           format = "#{format.begin}:#{format.end}"
@@ -20,11 +20,12 @@ module MQTT
         raise ArgumentError, "unit must be nil or a string" unless unit.nil? || unit.is_a?(String)
         raise ArgumentError, "format is required for enums" if datatype == :enum && format.nil?
         raise ArgumentError, "format is required for colors" if datatype == :color && format.nil?
-        raise ArgumentError, "format must be either rgb or hsv for colors" if datatype == :color && !%w{rgb
-                                                                                                        hsv}.include?(format.to_s)
-
-        raise ArgumentError,
-              "an initial value cannot be provided for a non-retained property" if !value.nil? && !retained
+        if datatype == :color && !%w[rgb hsv].include?(format.to_s)
+          raise ArgumentError, "format must be either rgb or hsv for colors"
+        end
+        if !value.nil? && !retained
+          raise ArgumentError, "an initial value cannot be provided for a non-retained property"
+        end
 
         super(id, name)
 
@@ -73,31 +74,31 @@ module MQTT
       end
 
       def value=(value)
-        if @value != value
-          @value = value if retained?
-          publish_value if @published
-        end
+        return if @value == value
+
+        @value = value if retained?
+        publish_value if @published
       end
 
       def unit=(unit)
-        if unit != @unit
-          @unit = unit
-          if @published
-            device.init do
-              mqtt.publish("#{topic}/$unit", unit.to_s, retain: true, qos: 1)
-            end
-          end
+        return if unit == @unit
+
+        @unit = unit
+        return unless @published
+
+        device.init do
+          mqtt.publish("#{topic}/$unit", unit.to_s, retain: true, qos: 1)
         end
       end
 
       def format=(format)
-        if format != @format
-          @format = format
-          if @published
-            device.init do
-              mqtt.publish("#{topic}/$format", format.to_s, retain: true, qos: 1)
-            end
-          end
+        return if format == @format
+
+        @format = format
+        return unless @published
+
+        device.init do
+          mqtt.publish("#{topic}/$format", format.to_s, retain: true, qos: 1)
         end
       end
 
@@ -105,9 +106,9 @@ module MQTT
         return nil unless format
 
         case datatype
-        when :enum; format.split(",")
-        when :integer; Range.new(*format.split(":").map(&:to_i))
-        when :float; Range.new(*format.split(":").map(&:to_f))
+        when :enum then format.split(",")
+        when :integer then Range.new(*format.split(":").map(&:to_i))
+        when :float then Range.new(*format.split(":").map(&:to_f))
         else; raise MethodNotImplemented
         end
       end
@@ -115,28 +116,29 @@ module MQTT
       def set(value)
         case datatype
         when :boolean
-          return unless %w{true false}.include?(value)
+          return unless %w[true false].include?(value)
 
           value = value == "true"
         when :integer
-          return unless value =~ /^-?\d+$/
+          return unless /^-?\d+$/.match?(value)
 
           value = value.to_i
-          return unless range.include?(value) if format
+          return if format && !range.include?(value)
         when :float
-          return unless value =~ /^-?(?:\d+|\d+\.|\.\d+|\d+\.\d+)(?:[eE]-?\d+)?$/
+          return unless /^-?(?:\d+|\d+\.|\.\d+|\d+\.\d+)(?:[eE]-?\d+)?$/.match?(value)
 
           value = value.to_f
-          return unless range.include?(value) if format
+          return if format && !range.include?(value)
         when :enum
           return unless range.include?(value)
         when :color
-          return unless value =~ /^\d{1,3},\d{1,3},\d{1,3}$/
+          return unless /^\d{1,3},\d{1,3},\d{1,3}$/.match?(value)
 
           value = value.split(",").map(&:to_i)
-          if format == "rgb"
+          case format
+          when "rgb"
             return if value.max > 255
-          elsif format == "hsv"
+          when "hsv"
             return if value.first > 360 || value[1..2].max > 100
           end
         when :datetime

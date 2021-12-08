@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "lib/mqtt/homie/version"
 
 Gem::Specification.new do |s|
@@ -9,8 +11,13 @@ Gem::Specification.new do |s|
   s.homepage = "https://github.com/ccutrer/homie-mqtt"
   s.summary = "Library for publishing devices that conform to the Homie spec."
   s.license = "MIT"
+  s.metadata = {
+    "rubygems_mfa_required" => "true"
+  }
 
   s.files = Dir["{lib}/**/*"]
+
+  s.required_ruby_version = ">= 2.5"
 
   s.add_dependency "mqtt-ccutrer", "~> 1.0", ">= 1.0.1"
   s.add_dependency "ruby2_keywords", "~> 0.0.5"

@@ -15,13 +15,13 @@ module MQTT
       end
 
       def name=(value)
-        if name != value
-          name = value
-          if @published
-            device.init do
-              mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
-            end
-          end
+        return if name == value
+
+        name = value
+        return unless @published
+
+        device.init do
+          mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
         end
       end
     end

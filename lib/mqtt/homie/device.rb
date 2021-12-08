@@ -10,12 +10,11 @@ module MQTT
       VERSION = "4.0.0"
 
       attr_reader :root_topic, :state, :mqtt
-      attr_accessor :logger
-      attr_accessor :out_of_band_topic_proc
+      attr_accessor :logger, :out_of_band_topic_proc
 
       def initialize(id, name, root_topic: nil, mqtt: nil, clear_topics: true, &block)
         super(id, name)
-        @root_topic = @root_topic || "homie"
+        @root_topic = root_topic || "homie"
         @state = :init
         @nodes = {}
         @published = false
@@ -26,9 +25,7 @@ module MQTT
 
         @mqtt.on_reconnect do
           each do |node|
-            node.each do |property|
-              property.subscribe
-            end
+            node.each(&:subscribe)
           end
           mqtt.publish("#{topic}/$state", :init, retain: true, qos: 1)
           mqtt.publish("#{topic}/$state", state, retain: true, qos: 1) unless state == :init
@@ -141,9 +138,7 @@ module MQTT
       end
 
       def init
-        if state == :init
-          return yield state
-        end
+        return yield state if state == :init
 
         prior_state = state
         mqtt.publish("#{topic}/$state", (state = :init).to_s, retain: true, qos: 1)
@@ -160,7 +155,7 @@ module MQTT
 
         @mqtt.subscribe("#{topic}/#")
         @mqtt.unsubscribe("#{topic}/#", wait_for_ack: true)
-        while !@mqtt.queue_empty?
+        until @mqtt.queue_empty?
           packet = @mqtt.get
           @mqtt.publish(packet.topic, retain: true, qos: 0)
         end
