@@ -105,9 +105,9 @@ module MQTT
         return nil unless format
 
         case datatype
-        when :enum; format.split(',')
-        when :integer; Range.new(*format.split(':').map(&:to_i))
-        when :float; Range.new(*format.split(':').map(&:to_f))
+        when :enum; format.split(",")
+        when :integer; Range.new(*format.split(":").map(&:to_i))
+        when :float; Range.new(*format.split(":").map(&:to_f))
         else; raise MethodNotImplemented
         end
       end
@@ -117,7 +117,7 @@ module MQTT
         when :boolean
           return unless %w{true false}.include?(value)
 
-          value = value == 'true'
+          value = value == "true"
         when :integer
           return unless value =~ /^-?\d+$/
 
@@ -133,10 +133,10 @@ module MQTT
         when :color
           return unless value =~ /^\d{1,3},\d{1,3},\d{1,3}$/
 
-          value = value.split(',').map(&:to_i)
-          if format == 'rgb'
+          value = value.split(",").map(&:to_i)
+          if format == "rgb"
             return if value.max > 255
-          elsif format == 'hsv'
+          elsif format == "hsv"
             return if value.first > 360 || value[1..2].max > 100
           end
         when :datetime

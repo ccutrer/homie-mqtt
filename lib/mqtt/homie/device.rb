@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'mqtt'
-require 'ruby2_keywords'
+require "mqtt"
+require "ruby2_keywords"
 
 module MQTT
   module Homie

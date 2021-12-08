@@ -11,7 +11,7 @@ Metrics:
 
 Naming/FileName:
   Exclude:
-    - lib/mqtt-homeassistant.rb
+    - lib/homie-mqtt.rb
 
 Performance/Casecmp:
   AutoCorrect: false

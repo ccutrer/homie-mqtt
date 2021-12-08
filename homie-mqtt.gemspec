@@ -1,7 +1,7 @@
 require_relative "lib/mqtt/homie/version"
 
 Gem::Specification.new do |s|
-  s.name = 'homie-mqtt'
+  s.name = "homie-mqtt"
   s.version = MQTT::Homie::VERSION
   s.platform = Gem::Platform::RUBY
   s.authors = ["Cody Cutrer"]
@@ -12,11 +12,11 @@ Gem::Specification.new do |s|
 
   s.files = Dir["{lib}/**/*"]
 
-  s.add_dependency 'mqtt-ccutrer', "~> 1.0", ">= 1.0.1"
-  s.add_dependency 'ruby2_keywords', "~> 0.0.5"
+  s.add_dependency "mqtt-ccutrer", "~> 1.0", ">= 1.0.1"
+  s.add_dependency "ruby2_keywords", "~> 0.0.5"
 
-  s.add_development_dependency 'byebug', "~> 9.0"
-  s.add_development_dependency 'rake', "~> 13.0"
+  s.add_development_dependency "byebug", "~> 9.0"
+  s.add_development_dependency "rake", "~> 13.0"
   s.add_development_dependency "rubocop", "~> 1.23"
   s.add_development_dependency "rubocop-performance", "~> 1.12"
   s.add_development_dependency "rubocop-rake", "~> 0.6"
