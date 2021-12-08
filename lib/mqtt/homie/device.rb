@@ -141,12 +141,12 @@ module MQTT
         return yield state if state == :init
 
         prior_state = state
-        mqtt.publish("#{topic}/$state", (state = :init).to_s, retain: true, qos: 1)
+        mqtt.publish("#{topic}/$state", (self.state = :init).to_s, retain: true, qos: 1)
         result = nil
         mqtt.batch_publish do
           result = yield prior_state
         end
-        mqtt.publish("#{topic}/$state", (state = :ready).to_s, retain: true, qos: 1)
+        mqtt.publish("#{topic}/$state", (self.state = :ready).to_s, retain: true, qos: 1)
         result
       end
 
