@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    homie-mqtt (1.4.5)
+    homie-mqtt (1.5.0)
       mqtt-ccutrer (~> 1.0, >= 1.0.1)
       ruby2_keywords (~> 0.0.5)
 
