@@ -9,6 +9,7 @@ module MQTT
 
       def initialize(id, name)
         raise ArgumentError, "Invalid Homie ID '#{id}'" unless id.is_a?(String) && id =~ Regexp.new("^#{REGEX}$")
+
         @id = id
         @name = name
       end

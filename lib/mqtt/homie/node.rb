@@ -31,6 +31,7 @@ module MQTT
         device.init do |prior_state|
           property = Property.new(self, *args, &block)
           raise ArgumentError, "Property '#{property.id}' already exists on '#{id}'" if @properties.key?(property.id)
+
           @properties[property.id] = property
           property.publish if prior_state == :ready
           property
@@ -39,6 +40,7 @@ module MQTT
 
       def remove_property(id)
         return false unless (property = @properties[id])
+
         init do
           property.unpublish
           @properties.delete(id)
@@ -83,6 +85,7 @@ module MQTT
 
       def unpublish
         return unless @published
+
         @published = false
 
         mqtt.publish("#{topic}/$name", retain: true, qos: 0)

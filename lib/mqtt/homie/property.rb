@@ -6,19 +6,25 @@ module MQTT
       attr_reader :node, :datatype, :format, :unit, :value
 
       def initialize(node, id, name, datatype, value = nil, format: nil, retained: true, unit: nil, &block)
-        raise ArgumentError, "Invalid Homie datatype" unless %i[string integer float boolean enum color datetime duration].include?(datatype)
+        raise ArgumentError, "Invalid Homie datatype" unless %i[string integer float boolean enum color datetime
+                                                                duration].include?(datatype)
         raise ArgumentError, "retained must be boolean" unless [true, false].include?(retained)
+
         format = format.join(",") if format.is_a?(Array) && datatype == :enum
         if %i{integer float}.include?(datatype) && format.is_a?(Range)
           raise ArgumentError "only inclusive ranges are supported" if format.exclude_end?
+
           format = "#{format.begin}:#{format.end}"
         end
         raise ArgumentError, "format must be nil or a string" unless format.nil? || format.is_a?(String)
         raise ArgumentError, "unit must be nil or a string" unless unit.nil? || unit.is_a?(String)
         raise ArgumentError, "format is required for enums" if datatype == :enum && format.nil?
         raise ArgumentError, "format is required for colors" if datatype == :color && format.nil?
-        raise ArgumentError, "format must be either rgb or hsv for colors" if datatype == :color && !%w{rgb hsv}.include?(format.to_s)
-        raise ArgumentError, "an initial value cannot be provided for a non-retained property" if !value.nil? && !retained
+        raise ArgumentError, "format must be either rgb or hsv for colors" if datatype == :color && !%w{rgb
+                                                                                                        hsv}.include?(format.to_s)
+
+        raise ArgumentError,
+              "an initial value cannot be provided for a non-retained property" if !value.nil? && !retained
 
         super(id, name)
 
@@ -38,10 +44,10 @@ module MQTT
         result << ", unit=#{unit.inspect}" if unit
         result << ", settable=true" if settable?
         result << if retained?
-          ", value=#{value.inspect}"
-        else
-          ", retained=false"
-        end
+                    ", value=#{value.inspect}"
+                  else
+                    ", retained=false"
+                  end
         result << ">"
         result.freeze
       end
@@ -110,19 +116,23 @@ module MQTT
         case datatype
         when :boolean
           return unless %w{true false}.include?(value)
+
           value = value == 'true'
         when :integer
           return unless value =~ /^-?\d+$/
+
           value = value.to_i
           return unless range.include?(value) if format
         when :float
           return unless value =~ /^-?(?:\d+|\d+\.|\.\d+|\d+\.\d+)(?:[eE]-?\d+)?$/
+
           value = value.to_f
           return unless range.include?(value) if format
         when :enum
           return unless range.include?(value)
         when :color
           return unless value =~ /^\d{1,3},\d{1,3},\d{1,3}$/
+
           value = value.split(',').map(&:to_i)
           if format == 'rgb'
             return if value.max > 255
@@ -173,6 +183,7 @@ module MQTT
 
       def unpublish
         return unless @published
+
         @published = false
 
         mqtt.publish("#{topic}/$name", retain: true, qos: 0)

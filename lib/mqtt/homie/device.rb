@@ -68,6 +68,7 @@ module MQTT
 
       def remove_node(id)
         return false unless (node = @nodes[id])
+
         init do
           node.unpublish
           @nodes.delete(id)
