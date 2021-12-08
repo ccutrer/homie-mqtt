@@ -14,7 +14,13 @@ module MQTT
       end
 
       def inspect
-        "#<MQTT::Homie::Node #{topic} name=#{name.inspect}, type=#{type.inspect}>"
+        "#<MQTT::Homie::Node #{topic} name=#{full_name.inspect}, type=#{type.inspect}>"
+      end
+
+      def full_name
+        return name if device.count == 1
+
+        "#{device.name} #{name}"
       end
 
       def topic
