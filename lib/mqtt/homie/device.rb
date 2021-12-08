@@ -6,6 +6,9 @@ require 'ruby2_keywords'
 module MQTT
   module Homie
     class Device < Base
+      # the Homie spec version
+      VERSION = "4.0.0"
+
       attr_reader :root_topic, :state, :mqtt
       attr_accessor :logger
       attr_accessor :out_of_band_topic_proc
@@ -81,11 +84,15 @@ module MQTT
         @nodes.each_value(&block)
       end
 
+      def count
+        @nodes.count
+      end
+
       def publish
         return if @published
 
         mqtt.batch_publish do
-          mqtt.publish("#{topic}/$homie", "4.0.0", retain: true, qos: 1)
+          mqtt.publish("#{topic}/$homie", VERSION, retain: true, qos: 1)
           mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
           mqtt.publish("#{topic}/$state", @state.to_s, retain: true, qos: 1)
 
