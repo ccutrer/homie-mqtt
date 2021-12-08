@@ -96,6 +96,8 @@ module MQTT
       end
 
       def range
+        return nil unless format
+
         case datatype
         when :enum; format.split(',')
         when :integer; Range.new(*format.split(':').map(&:to_i))
