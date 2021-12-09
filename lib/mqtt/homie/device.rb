@@ -69,7 +69,7 @@ module MQTT
         init do
           node.unpublish
           @nodes.delete(id)
-          mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), retain: true, qos: 1) if @published
+          mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), retain: true, qos: 1) if published?
         end
         true
       end
@@ -86,8 +86,12 @@ module MQTT
         @nodes.count
       end
 
+      def published?
+        @published
+      end
+
       def publish
-        return if @published
+        return if published?
 
         mqtt.batch_publish do
           mqtt.publish("#{topic}/$homie", VERSION, retain: true, qos: 1)
@@ -151,7 +155,7 @@ module MQTT
       end
 
       def clear_topics
-        raise ArgumentError, "cannot clear topics once published" if @published
+        raise ArgumentError, "cannot clear topics once published" if published?
 
         @mqtt.subscribe("#{topic}/#")
         @mqtt.unsubscribe("#{topic}/#", wait_for_ack: true)

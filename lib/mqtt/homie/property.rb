@@ -77,14 +77,14 @@ module MQTT
         return if @value == value
 
         @value = value if retained?
-        publish_value if @published
+        publish_value if published?
       end
 
       def unit=(unit)
         return if unit == @unit
 
         @unit = unit
-        return unless @published
+        return unless published?
 
         device.init do
           mqtt.publish("#{topic}/$unit", unit.to_s, retain: true, qos: 1)
@@ -95,7 +95,7 @@ module MQTT
         return if format == @format
 
         @format = format
-        return unless @published
+        return unless published?
 
         device.init do
           mqtt.publish("#{topic}/$format", format.to_s, retain: true, qos: 1)
@@ -162,8 +162,12 @@ module MQTT
         node.mqtt
       end
 
+      def published?
+        @published
+      end
+
       def publish
-        return if @published
+        return if published?
 
         mqtt.batch_publish do
           mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
@@ -184,7 +188,7 @@ module MQTT
       end
 
       def unpublish
-        return unless @published
+        return unless published?
 
         @published = false
 
