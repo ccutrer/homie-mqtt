@@ -5,8 +5,23 @@ module MQTT
     class Property < Base
       attr_reader :node, :datatype, :format, :unit, :value
 
-      def initialize(node, id, name, datatype, value = nil, format: nil, retained: true, unit: nil, &block)
-        raise ArgumentError, "Invalid Homie datatype" unless %i[string integer float boolean enum color datetime
+      def initialize(node,
+                     id,
+                     name,
+                     datatype,
+                     value = nil,
+                     format: nil,
+                     retained: true,
+                     unit: nil,
+                     non_standard_value_check: nil,
+                     &block)
+        raise ArgumentError, "Invalid Homie datatype" unless %i[string
+                                                                integer
+                                                                float
+                                                                boolean
+                                                                enum
+                                                                color
+                                                                datetime
                                                                 duration].include?(datatype)
         raise ArgumentError, "retained must be boolean" unless [true, false].include?(retained)
         raise ArgumentError, "unit must be nil or a string" unless unit.nil? || unit.is_a?(String)
@@ -23,6 +38,7 @@ module MQTT
         @unit = unit
         @value = value
         @published = false
+        @non_standard_value_check = non_standard_value_check
         @block = block
       end
 
@@ -117,48 +133,42 @@ module MQTT
       end
 
       def set(value)
+        casted_value = case datatype
+                       when :boolean
+                         %w[true false].include?(value) ? value == "true" : nil
+                       when :integer
+                         /^-?\d+$/.match?(value) && value.to_i
+                       when :float
+                         /^-?(?:\d+|\d+\.|\.\d+|\d+\.\d+)(?:[eE]-?\d+)?$/.match?(value) && value.to_f
+                       when :enum
+                         value
+                       when :color
+                         /^\d{1,3},\d{1,3},\d{1,3}$/.match?(value) && value = value.split(",").map(&:to_i)
+                       when :datetime
+                         begin
+                           value = Time.parse(value)
+                         rescue ArgumentError
+                           nil
+                         end
+                       when :duration
+                         begin
+                           value = ActiveSupport::Duration.parse(value)
+                         rescue ActiveSupport::Duration::ISO8601Parser::ParsingError
+                           nil
+                         end
+                       end
         case datatype
-        when :boolean
-          return unless %w[true false].include?(value)
-
-          value = value == "true"
-        when :integer
-          return unless /^-?\d+$/.match?(value)
-
-          value = value.to_i
-          return if format && !range.include?(value)
-        when :float
-          return unless /^-?(?:\d+|\d+\.|\.\d+|\d+\.\d+)(?:[eE]-?\d+)?$/.match?(value)
-
-          value = value.to_f
-          return if format && !range.include?(value)
-        when :enum
-          return unless range.include?(value)
+        when :integer, :float, :enum
+          casted_value = nil if format && !range.include?(casted_value)
         when :color
-          return unless /^\d{1,3},\d{1,3},\d{1,3}$/.match?(value)
-
-          value = value.split(",").map(&:to_i)
-          case format
-          when "rgb"
-            return if value.max > 255
-          when "hsv"
-            return if value.first > 360 || value[1..2].max > 100
-          end
-        when :datetime
-          begin
-            value = Time.parse(value)
-          rescue ArgumentError
-            return
-          end
-        when :duration
-          begin
-            value = ActiveSupport::Duration.parse(value)
-          rescue ActiveSupport::Duration::ISO8601Parser::ParsingError
-            return
-          end
+          casted_value = nil if (format == "rgb" && value.max > 255) ||
+                                (format == "hsb" && (value.first > 360 || value[1..2].max > 100))
         end
 
-        @block.arity == 2 ? @block.call(value, self) : @block.call(value)
+        casted_value = @non_standard_value_check&.call(value) if casted_value.nil?
+        return if casted_value.nil?
+
+        @block.arity == 2 ? @block.call(casted_value, self) : @block.call(casted_value)
       end
 
       def mqtt
