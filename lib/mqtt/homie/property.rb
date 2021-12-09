@@ -9,20 +9,7 @@ module MQTT
         raise ArgumentError, "Invalid Homie datatype" unless %i[string integer float boolean enum color datetime
                                                                 duration].include?(datatype)
         raise ArgumentError, "retained must be boolean" unless [true, false].include?(retained)
-
-        format = format.join(",") if format.is_a?(Array) && datatype == :enum
-        if %i[integer float].include?(datatype) && format.is_a?(Range)
-          raise ArgumentError "only inclusive ranges are supported" if format.exclude_end?
-
-          format = "#{format.begin}:#{format.end}"
-        end
-        raise ArgumentError, "format must be nil or a string" unless format.nil? || format.is_a?(String)
         raise ArgumentError, "unit must be nil or a string" unless unit.nil? || unit.is_a?(String)
-        raise ArgumentError, "format is required for enums" if datatype == :enum && format.nil?
-        raise ArgumentError, "format is required for colors" if datatype == :color && format.nil?
-        if datatype == :color && !%w[rgb hsv].include?(format.to_s)
-          raise ArgumentError, "format must be either rgb or hsv for colors"
-        end
         if !value.nil? && !retained
           raise ArgumentError, "an initial value cannot be provided for a non-retained property"
         end
@@ -31,7 +18,7 @@ module MQTT
 
         @node = node
         @datatype = datatype
-        @format = format
+        self.format = format
         @retained = retained
         @unit = unit
         @value = value
@@ -93,6 +80,22 @@ module MQTT
 
       def format=(format)
         return if format == @format
+
+        format = format.join(",") if format.is_a?(Array) && datatype == :enum
+        if %i[integer float].include?(datatype) && format.is_a?(Range)
+          raise ArgumentError, "only inclusive ranges are supported" if format.last.is_a?(Float) && format.exclude_end?
+
+          last = format.end
+          last -= 1 if format.exclude_end?
+
+          format = "#{format.begin}:#{last}"
+        end
+        raise ArgumentError, "format must be nil or a string" unless format.nil? || format.is_a?(String)
+        raise ArgumentError, "format is required for enums" if datatype == :enum && format.nil?
+        raise ArgumentError, "format is required for colors" if datatype == :color && format.nil?
+        if datatype == :color && !%w[rgb hsv].include?(format.to_s)
+          raise ArgumentError, "format must be either rgb or hsv for colors"
+        end
 
         @format = format
         return unless published?
