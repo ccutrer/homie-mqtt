@@ -158,7 +158,9 @@ module MQTT
                          end
                        end
         case datatype
-        when :integer, :float, :enum
+        when :integer, :float
+          casted_value = nil if format && !range.cover?(casted_value)
+        when :enum
           casted_value = nil if format && !range.include?(casted_value)
         when :color
           casted_value = nil if (format == "rgb" && value.max > 255) ||
