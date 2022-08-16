@@ -19,8 +19,10 @@ module MQTT
         @nodes = {}
         @published = false
         @out_of_band_topic_proc = block
-        mqtt = MQTT::Client.new(mqtt) if mqtt.is_a?(String)
-        @mqtt = mqtt || MQTT::Client.new
+        # retry forever
+        mqtt = MQTT::Client.new(mqtt, reconnect_limit: nil) if mqtt.is_a?(String)
+        mqtt = MQTT::Client.new(reconnect_limit: nil, **mqtt) if mqtt.is_a?(Hash)
+        @mqtt = mqtt || MQTT::Client.new(reconnect_limit: nil)
         @mqtt.set_will("#{topic}/$state", "lost", retain: true, qos: 1)
 
         @mqtt.on_reconnect do
