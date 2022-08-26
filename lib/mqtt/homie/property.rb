@@ -82,7 +82,7 @@ module MQTT
         return if @value == value
 
         @value = value if retained?
-        publish_value if published?
+        publish_value(value) if published?
       end
 
       def unit=(unit)
@@ -193,7 +193,7 @@ module MQTT
           mqtt.publish("#{topic}/$settable", "true", retain: true, qos: 1) if settable?
           mqtt.publish("#{topic}/$retained", "false", retain: true, qos: 1) unless retained?
           mqtt.publish("#{topic}/$unit", unit, retain: true, qos: 1) if unit
-          publish_value unless value.nil?
+          publish_value(value) unless value.nil?
           subscribe
         end
 
@@ -221,7 +221,7 @@ module MQTT
 
       private
 
-      def publish_value
+      def publish_value(value)
         serialized = value
         serialized = serialized&.iso8601 if %i[datetime duration].include?(datatype)
         serialized = serialized.to_s
