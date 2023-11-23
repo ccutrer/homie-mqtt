@@ -172,7 +172,7 @@ module MQTT
         casted_value = @non_standard_value_check&.call(value) if casted_value.nil?
         return if casted_value.nil?
 
-        @block.arity == 2 ? @block.call(casted_value, self) : @block.call(casted_value)
+        (@block.arity == 2) ? @block.call(casted_value, self) : @block.call(casted_value)
       end
 
       def mqtt

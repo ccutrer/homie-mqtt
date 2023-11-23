@@ -3,7 +3,7 @@
 module MQTT
   module Homie
     class Base
-      REGEX = "[a-z0-9][a-z0-9\-]*"
+      REGEX = "[a-z0-9][a-z0-9-]*"
 
       attr_reader :id, :name
 

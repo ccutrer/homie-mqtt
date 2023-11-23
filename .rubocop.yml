@@ -1,38 +1,22 @@
+inherit_gem:
+  rubocop-inst:
+  - rubocop.yml
+
 require:
   - rubocop-rake
-  - rubocop-performance
 
 AllCops:
   TargetRubyVersion: 2.5
   NewCops: enable
 
-Metrics:
-  Enabled: false
+Gemspec/DevelopmentDependencies:
+  EnforcedStyle: gemspec
 
 Naming/FileName:
   Exclude:
     - lib/homie-mqtt.rb
 
-Performance/Casecmp:
-  AutoCorrect: false
-
-Style/Alias:
-  EnforcedStyle: prefer_alias_method
 Style/BlockDelimiters:
-  IgnoredMethods: []
+  AllowedMethods: []
 Style/Documentation:
   Enabled: false
-Style/HashSyntax:
-  EnforcedStyle: ruby19_no_mixed_keys
-Style/PercentQLiterals:
-  EnforcedStyle: upper_case_q
-Style/PerlBackrefs:
-  Enabled: false
-Style/RescueStandardError:
-  EnforcedStyle: implicit
-Style/StringLiterals:
-  EnforcedStyle: double_quotes
-Style/StringLiteralsInInterpolation:
-  EnforcedStyle: double_quotes
-Style/TernaryParentheses:
-  EnforcedStyle: require_parentheses_when_complex
