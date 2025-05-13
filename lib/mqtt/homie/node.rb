@@ -76,18 +76,21 @@ module MQTT
 
       def publish
         mqtt.batch_publish do
-          unless published?
-            mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
-            mqtt.publish("#{topic}/$type", @type.to_s, retain: true, qos: 1)
-            @published = true
-          end
+          if device.metadata?
+            unless published?
+              mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
+              mqtt.publish("#{topic}/$type", @type.to_s, retain: true, qos: 1)
+              @published = true
+            end
 
-          mqtt.publish("#{topic}/$properties", @properties.keys.join(","), retain: true, qos: 1)
+            mqtt.publish("#{topic}/$properties", @properties.keys.join(","), retain: true, qos: 1)
+          end
           @properties.each_value(&:publish)
         end
       end
 
       def unpublish
+        return unless device.metadata?
         return unless published?
 
         @published = false

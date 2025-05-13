@@ -12,13 +12,14 @@ module MQTT
       attr_reader :root_topic, :state, :mqtt
       attr_accessor :logger, :out_of_band_topic_proc
 
-      def initialize(id, name, root_topic: nil, mqtt: nil, clear_topics: true, &block)
+      def initialize(id, name, root_topic: nil, mqtt: nil, clear_topics: true, metadata: true, &block)
         super(id, name)
         @root_topic = root_topic || "homie"
         @state = :init
         @nodes = {}
         @published = false
         @out_of_band_topic_proc = block
+        @metadata = metadata
         # retry forever
         mqtt = MQTT::Client.new(mqtt, reconnect_limit: nil) if mqtt.is_a?(String)
         mqtt = MQTT::Client.new(reconnect_limit: nil, **mqtt) if mqtt.is_a?(Hash)
@@ -92,12 +93,18 @@ module MQTT
         @published
       end
 
+      def metadata?
+        @metadata
+      end
+
       def publish
         return if published?
 
         mqtt.batch_publish do
-          mqtt.publish("#{topic}/$homie", VERSION, retain: true, qos: 1)
-          mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
+          if metadata?
+            mqtt.publish("#{topic}/$homie", VERSION, retain: true, qos: 1)
+            mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
+          end
           mqtt.publish("#{topic}/$state", @state.to_s, retain: true, qos: 1)
 
           @subscription_thread = Thread.new do
@@ -119,7 +126,7 @@ module MQTT
             end
           end
 
-          mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), retain: true, qos: 1)
+          mqtt.publish("#{topic}/$nodes", @nodes.keys.join(","), retain: true, qos: 1) if metadata?
           @nodes.each_value(&:publish)
 
           yield if block_given?

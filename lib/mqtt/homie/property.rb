@@ -187,12 +187,14 @@ module MQTT
         return if published?
 
         mqtt.batch_publish do
-          mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
-          mqtt.publish("#{topic}/$datatype", datatype.to_s, retain: true, qos: 1)
-          mqtt.publish("#{topic}/$format", format, retain: true, qos: 1) if format
-          mqtt.publish("#{topic}/$settable", "true", retain: true, qos: 1) if settable?
-          mqtt.publish("#{topic}/$retained", "false", retain: true, qos: 1) unless retained?
-          mqtt.publish("#{topic}/$unit", unit, retain: true, qos: 1) if unit
+          if device.metadata?
+            mqtt.publish("#{topic}/$name", name, retain: true, qos: 1)
+            mqtt.publish("#{topic}/$datatype", datatype.to_s, retain: true, qos: 1)
+            mqtt.publish("#{topic}/$format", format, retain: true, qos: 1) if format
+            mqtt.publish("#{topic}/$settable", "true", retain: true, qos: 1) if settable?
+            mqtt.publish("#{topic}/$retained", "false", retain: true, qos: 1) unless retained?
+            mqtt.publish("#{topic}/$unit", unit, retain: true, qos: 1) if unit
+          end
           publish_value(value) unless value.nil?
           subscribe
         end
@@ -209,12 +211,14 @@ module MQTT
 
         @published = false
 
-        mqtt.publish("#{topic}/$name", retain: true, qos: 0)
-        mqtt.publish("#{topic}/$datatype", retain: true, qos: 0)
-        mqtt.publish("#{topic}/$format", retain: true, qos: 0) if format
-        mqtt.publish("#{topic}/$settable", retain: true, qos: 0) if settable?
-        mqtt.publish("#{topic}/$retained", retain: true, qos: 0) unless retained?
-        mqtt.publish("#{topic}/$unit", retain: true, qos: 0) if unit
+        if device.metadata?
+          mqtt.publish("#{topic}/$name", retain: true, qos: 0)
+          mqtt.publish("#{topic}/$datatype", retain: true, qos: 0)
+          mqtt.publish("#{topic}/$format", retain: true, qos: 0) if format
+          mqtt.publish("#{topic}/$settable", retain: true, qos: 0) if settable?
+          mqtt.publish("#{topic}/$retained", retain: true, qos: 0) unless retained?
+          mqtt.publish("#{topic}/$unit", retain: true, qos: 0) if unit
+        end
         mqtt.unsubscribe("#{topic}/set") if settable?
         mqtt.publish(topic, retain: retained?, qos: 0) if !value.nil? && retained?
       end
