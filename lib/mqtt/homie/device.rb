@@ -89,6 +89,10 @@ module MQTT
         @nodes.count
       end
 
+      def empty?
+        @nodes.empty?
+      end
+
       def published?
         @published
       end

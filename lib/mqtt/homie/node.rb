@@ -57,6 +57,14 @@ module MQTT
         @properties.each_value(&block)
       end
 
+      def count
+        @properties.count
+      end
+
+      def empty?
+        @properties.empty?
+      end
+
       def mqtt
         device.mqtt
       end
