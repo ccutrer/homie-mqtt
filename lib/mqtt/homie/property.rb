@@ -16,6 +16,7 @@ module MQTT
                      retained: true,
                      unit: nil,
                      non_standard_value_check: nil,
+                     optimistic: false,
                      &block)
         raise ArgumentError, "Invalid Homie datatype" unless %i[string
                                                                 integer
@@ -41,6 +42,7 @@ module MQTT
         @value = value
         @published = false
         @non_standard_value_check = non_standard_value_check
+        @optimistic = optimistic
         @block = block
       end
 
@@ -54,6 +56,7 @@ module MQTT
                   else
                     ", retained=false"
                   end
+        result << ", optimistic=true" if optimistic?
         result << ">"
         result.freeze
       end
@@ -76,6 +79,10 @@ module MQTT
 
       def settable?
         !!@block
+      end
+
+      def optimistic?
+        @optimistic
       end
 
       def value=(value)
@@ -173,6 +180,7 @@ module MQTT
         return if casted_value.nil?
 
         (@block.arity == 2) ? @block.call(casted_value, self) : @block.call(casted_value)
+        self.value = casted_value if optimistic?
       end
 
       def mqtt
