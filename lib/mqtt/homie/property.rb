@@ -179,7 +179,12 @@ module MQTT
         casted_value = @non_standard_value_check&.call(value) if casted_value.nil?
         return if casted_value.nil?
 
-        (@block.arity == 2) ? @block.call(casted_value, self) : @block.call(casted_value)
+        begin
+          (@block.arity == 2) ? @block.call(casted_value, self) : @block.call(casted_value)
+        rescue => e
+          device.logger&.warn("Failed to set property #{topic} to #{casted_value.inspect}: #{e.message}")
+          return
+        end
         self.value = casted_value if optimistic?
       end
 

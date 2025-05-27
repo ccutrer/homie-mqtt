@@ -122,7 +122,11 @@ module MQTT
               property = node[match[:property]] if node
 
               unless property&.settable?
-                @out_of_band_topic_proc&.call(packet.topic, packet.payload)
+                begin
+                  @out_of_band_topic_proc&.call(packet.topic, packet.payload)
+                rescue => e
+                  logger&.warn("Error in out of band topic proc for topic #{packet.topic} with payload #{payload.inspect}: #{e.message}")
+                end
                 next
               end
 
