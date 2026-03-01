@@ -18,7 +18,7 @@ module MQTT
       end
 
       def full_name
-        return name if device.count == 1
+        return name if device.count == 1 # rubocop:disable Style/CollectionQuerying
 
         "#{device.name} #{name}"
       end
@@ -38,7 +38,7 @@ module MQTT
         end
       end
 
-      def remove_property(id)
+      def remove_property(id) # rubocop:disable Naming/PredicateMethod
         return false unless (property = @properties[id])
 
         init do

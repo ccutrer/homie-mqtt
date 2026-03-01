@@ -66,7 +66,7 @@ module MQTT
         end
       end
 
-      def remove_node(id)
+      def remove_node(id) # rubocop:disable Naming/PredicateMethod
         return false unless (node = @nodes[id])
 
         init do
@@ -176,7 +176,7 @@ module MQTT
         result
       end
 
-      def clear_topics
+      def clear_topics # rubocop:disable Naming/PredicateMethod
         raise ArgumentError, "cannot clear topics once published" if published?
 
         @mqtt.subscribe("#{topic}/#")
