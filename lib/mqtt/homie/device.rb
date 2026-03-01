@@ -125,7 +125,8 @@ module MQTT
                 begin
                   @out_of_band_topic_proc&.call(packet.topic, packet.payload)
                 rescue => e
-                  logger&.warn("Error in out of band topic proc for topic #{packet.topic} with payload #{payload.inspect}: #{e.message}")
+                  logger&.warn("Error in out of band topic proc for topic #{packet.topic} " \
+                               "with payload #{packet.payload.inspect}: #{e.message}")
                 end
                 next
               end
@@ -139,7 +140,7 @@ module MQTT
 
           yield if block_given?
 
-          self.state == :ready
+          state == :ready
         end
 
         @published = true
