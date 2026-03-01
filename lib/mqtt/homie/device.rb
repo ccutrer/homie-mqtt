@@ -139,10 +139,14 @@ module MQTT
 
           yield if block_given?
 
-          mqtt.publish("#{topic}/$state", (@state = :ready).to_s, retain: true, qos: 1)
+          self.state == :ready
         end
 
         @published = true
+      end
+
+      def state=(state)
+        mqtt.publish("#{topic}/$state", (@state = state).to_s, retain: true, qos: 1)
       end
 
       def disconnect
@@ -162,12 +166,12 @@ module MQTT
         return yield state if state == :init
 
         prior_state = state
-        mqtt.publish("#{topic}/$state", (@state = :init).to_s, retain: true, qos: 1)
+        self.state = :init
         result = nil
         mqtt.batch_publish do
           result = yield prior_state
         end
-        mqtt.publish("#{topic}/$state", (@state = :ready).to_s, retain: true, qos: 1)
+        self.state = :ready
         result
       end
 
