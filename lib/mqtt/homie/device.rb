@@ -140,7 +140,7 @@ module MQTT
 
           yield if block_given?
 
-          state == :ready
+          self.state = :ready
         end
 
         @published = true
